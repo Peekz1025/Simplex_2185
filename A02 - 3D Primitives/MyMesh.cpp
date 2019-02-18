@@ -276,7 +276,15 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	for (size_t i = 0; i < a_nSubdivisions; i++) {
+		vector3 pt = vector3(a_fRadius * cos((2.0f * PI) * i / (float)a_nSubdivisions), a_fRadius * sin((2.0f * PI) * i / (float)a_nSubdivisions), -.5);
+		vector3 ptt = vector3(a_fRadius * cos((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), a_fRadius*sin((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), -.5);
+		vector3 pttt = vector3(0, 0, -.5);
+		AddTri(ptt, pt, pttt);
+
+		vector3 ppttt = vector3(0, 0, .5);
+		AddTri(pt, ptt, ppttt);
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -300,7 +308,19 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	for (size_t i = 0; i < a_nSubdivisions; i++) {
+		vector3 pt = vector3(a_fRadius * cos((2.0f * PI) * i / (float)a_nSubdivisions), a_fRadius * sin((2.0f * PI) * i / (float)a_nSubdivisions), -.5);
+		vector3 ptt = vector3(a_fRadius * cos((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), a_fRadius*sin((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), -.5);
+		vector3 pttt = vector3(0, 0, -.5);
+		AddTri(ptt, pt, pttt);
+
+		vector3 ppt = vector3(a_fRadius * cos((2.0f * PI) * i / (float)a_nSubdivisions), a_fRadius * sin((2.0f * PI) * i / (float)a_nSubdivisions), .5);
+		vector3 pptt = vector3(a_fRadius * cos((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), a_fRadius*sin((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), .5);
+		vector3 ppttt = vector3(0, 0, .5);
+		AddTri(ppt, pptt, ppttt);
+
+		AddQuad(pt, ptt,ppt,pptt);
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -328,9 +348,24 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 
 	Release();
 	Init();
-
+	
 	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	for (size_t i = 0; i < a_nSubdivisions; i++) {
+		vector3 pt = vector3(a_fOuterRadius * cos((2.0f * PI) * i / (float)a_nSubdivisions), a_fOuterRadius * sin((2.0f * PI) * i / (float)a_nSubdivisions), -.5);
+		vector3 ptt = vector3(a_fOuterRadius * cos((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), a_fOuterRadius*sin((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), -.5);
+		vector3 pttt = vector3(a_fInnerRadius * cos((2.0f * PI) * i / (float)a_nSubdivisions), a_fInnerRadius * sin((2.0f * PI) * i / (float)a_nSubdivisions), -.5);
+		vector3 ptttt = vector3(a_fInnerRadius * cos((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), a_fInnerRadius*sin((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), -.5);
+		AddQuad(ptt, pt, ptttt, pttt);
+
+		vector3 ppt = vector3(a_fOuterRadius * cos((2.0f * PI) * i / (float)a_nSubdivisions), a_fOuterRadius * sin((2.0f * PI) * i / (float)a_nSubdivisions), .5);
+		vector3 pptt = vector3(a_fOuterRadius * cos((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), a_fOuterRadius*sin((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), .5);
+		vector3 ppttt = vector3(a_fInnerRadius * cos((2.0f * PI) * i / (float)a_nSubdivisions), a_fInnerRadius * sin((2.0f * PI) * i / (float)a_nSubdivisions), .5);
+		vector3 pptttt = vector3(a_fInnerRadius * cos((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), a_fInnerRadius*sin((2.0f * PI) * (i + 1) / (float)a_nSubdivisions), .5);
+		AddQuad(ppt, pptt, ppttt, pptttt);
+
+		AddQuad(pt, ptt, ppt, pptt);
+		AddQuad(ptttt, pttt, pptttt, ppttt);
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -387,7 +422,40 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	Init();
 
 	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	// init a counting number, list for the vertices, and a 0 vector
+	int num = 0;
+	vector3 vertices[100];
+	vector3 vec0 = { 0,0,0 };
+
+	//init all the values to be 0 vector
+	for (int i = 0; i < (sizeof(vertices) / sizeof(*vertices)); i++){
+		vertices[i] = vec0;
+	}
+
+	//goes through and sets each point
+	for (double phi = 0; phi < 2 * PI; phi += PI / a_nSubdivisions){
+		for (double theta = 0; theta < PI; theta += PI / a_nSubdivisions){
+			float r = a_fRadius;
+			vertices[num] = vector3(r * cos(phi) * sin(theta), r * sin(phi) * sin(theta), r * cos(theta));
+			num++;
+		}
+	}
+
+	//double checks each point
+	for (int ii = 0; ii <= a_nSubdivisions; ii++){
+		vertices[num] = vertices[ii];
+		num++;
+	}
+
+	//goes through vertices and draws them in quads
+	for (int iii = 0; iii <= (sizeof(vertices) / sizeof(*vertices)); iii++){
+		if ((vertices[iii] == vec0) || (vertices[iii + a_nSubdivisions + 1] == vec0) || (vertices[iii + a_nSubdivisions + 2] == vec0)) {
+			continue;
+		}
+		else {
+			AddQuad(vertices[iii], vertices[iii + 1], vertices[iii + a_nSubdivisions + 1], vertices[iii + (a_nSubdivisions + 2)]);
+		}
+	}
 	// -------------------------------
 
 	// Adding information about color
