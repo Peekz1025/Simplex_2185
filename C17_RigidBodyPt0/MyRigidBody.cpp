@@ -63,6 +63,14 @@ void MyRigidBody::Release(void)
 MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 {
 	Init();
+
+	m_v3Center = vector3(0.0f);
+	m_v3MinL = m_v3MinL = vector3(5.0f);
+	m_v3MaxL = m_v3MinL = vector3(-5.0f);
+
+	//m_fRadius = glm::distance; //Radius
+
+	vector3 m_v3HalfWidth = vector3(0.0f); //half the size of all sides
 }
 MyRigidBody::MyRigidBody(MyRigidBody const& other)
 {
@@ -100,6 +108,8 @@ MyRigidBody::~MyRigidBody(){Release();};
 //--- Non Standard Singleton Methods
 void MyRigidBody::AddToRenderList(void)
 {
+	m_pMeshMngr->AddWireSphereToRenderList(glm::scale(vector3(3.0f)), C_RED, RENDER_WIRE);
+
 	if (!m_bVisible)
 		return;
 }
