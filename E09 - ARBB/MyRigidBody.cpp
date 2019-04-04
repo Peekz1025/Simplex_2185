@@ -83,13 +83,57 @@ void MyRigidBody::SetModelMatrix(matrix4 a_m4ModelMatrix)
 		return;
 
 	m_m4ToWorld = a_m4ModelMatrix;
-	
-	//your code goes here---------------------
-	m_v3MinG = m_v3MinL;
-	m_v3MaxG = m_v3MaxL;
-	//----------------------------------------
 
-	//we calculate the distance between min and max vectors
+
+	//I ADDED
+	//sets up ARBB
+	vector3 v3Edges[8];
+
+	v3Edges[0] = m_v3MinL;
+	v3Edges[1] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MinL.z);
+	v3Edges[2] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MinL.z);
+	v3Edges[3] = vector3(m_v3MaxL.x, m_v3MaxL.y, m_v3MinL.z);
+
+	v3Edges[4] = vector3(m_v3MinL.x, m_v3MinL.y, m_v3MaxL.z);
+	v3Edges[5] = vector3(m_v3MaxL.x, m_v3MinL.y, m_v3MaxL.z);
+	v3Edges[6] = vector3(m_v3MinL.x, m_v3MaxL.y, m_v3MaxL.z);
+	v3Edges[7] = m_v3MaxL;
+
+	for (uint uIndex = 0; uIndex < 8; uIndex++) {
+		v3Edges[uIndex] = vector3(m_m4ToWorld * vector4(v3Edges[uIndex], 1.0f));
+	}
+
+
+	m_v3MaxG = m_v3MinG = v3Edges[0];
+
+	for (uint i = 1; i < 8; ++i) {
+		if (m_v3MaxG.x < v3Edges[i].x) {
+			m_v3MaxG.x = v3Edges[i].x;
+		}
+		else if (m_v3MinG.x > v3Edges[i].x) {
+			m_v3MinG.x = v3Edges[i].x;
+		}
+
+		if (m_v3MaxG.y < v3Edges[i].y) {
+			m_v3MaxG.y = v3Edges[i].y;
+		}
+		else if (m_v3MinG.y > v3Edges[i].y) {
+			m_v3MinG.y = v3Edges[i].y;
+		}
+
+		if (m_v3MaxG.z < v3Edges[i].z) {
+			m_v3MaxG.z = v3Edges[i].z;
+		}
+		else if (m_v3MinG.z > v3Edges[i].z) {
+			m_v3MinG.z = v3Edges[i].z;
+		}
+	}
+
+	/*
+	m_v3MinimumG = m_v3Minimum;
+	m_v3MaximumG = m_v3Maximum;
+	*/
+
 	m_v3ARBBSize = m_v3MaxG - m_v3MinG;
 }
 //The big 3
@@ -103,10 +147,11 @@ MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 	if (uVertexCount == 0)
 		return;
 
+	//I ADDED
 	//Max and min as the first vector of the list
 	m_v3MaxL = m_v3MinL = a_pointList[0];
 
-	//Get the max and min out of the list
+	//checks for new mins and maxs
 	for (uint i = 1; i < uVertexCount; ++i)
 	{
 		if (m_v3MaxL.x < a_pointList[i].x) m_v3MaxL.x = a_pointList[i].x;
@@ -119,15 +164,16 @@ MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 		else if (m_v3MinL.z > a_pointList[i].z) m_v3MinL.z = a_pointList[i].z;
 	}
 
-	//with model matrix being the identity, local and global are the same
+	//set local and global ==
 	m_v3MinG = m_v3MinL;
 	m_v3MaxG = m_v3MaxL;
 
-	//with the max and the min we calculate the center
+	//the center of the model
 	m_v3Center = (m_v3MaxL + m_v3MinL) / 2.0f;
 
-	//we calculate the distance between min and max vectors
-	m_v3HalfWidth = (m_v3MaxL - m_v3MinL) / 2.0f;
+	//size = max - min
+	m_v3HalfWidth = (m_v3MaxL - m_v3MinL) / 2;
+	m_v3ARBBSize = (m_v3MaxL - m_v3MinL);
 
 	//Get the distance between the center and either the min or the max
 	m_fRadius = glm::distance(m_v3Center, m_v3MinL);

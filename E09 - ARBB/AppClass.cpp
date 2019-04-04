@@ -40,7 +40,7 @@ void Application::Update(void)
 	matrix4 mCreeper = glm::translate(m_v3Creeper) * ToMatrix4(m_qCreeper) * ToMatrix4(m_qArcBall);
 	m_pCreeper->SetModelMatrix(mCreeper);
 	m_pCreeperRB->SetModelMatrix(mCreeper);
-	m_pMeshMngr->AddAxisToRenderList(mCreeper);
+	//m_pMeshMngr->AddAxisToRenderList(mCreeper);
 	
 	//Set model matrix to Steve
 	matrix4 mSteve = glm::translate(vector3(2.25f, 0.0f, 0.0f)) * glm::rotate(IDENTITY_M4, glm::radians(-55.0f), AXIS_Z);

@@ -28,6 +28,14 @@ class MyCamera
 
 	matrix4 m_m4View; //View matrix
 	matrix4 m_m4Projection; //Projection Matrix
+
+
+	vector3 m_v3Forward = vector3(0.0f, 0.0f, -1.0f);
+	vector3 m_v3Vertical = vector3(0.0f, -1.0f, 0.0f);
+	vector3 m_v3Sideways = vector3(-1.0f, 0.0f, 0.0f);
+
+
+
 public:
 	/*
 	USAGE: Constructor
@@ -230,6 +238,11 @@ public:
 	OUTPUT: ---
 	*/
 	void MoveSideways(float a_fDistance = 0.1f);
+
+	//i added
+	void MoveYaw(float a_fDistance = 0.1f);
+	void MovePitch(float a_fDistance = 0.1f);
+
 };
 
 } //namespace Simplex

@@ -13,7 +13,12 @@ vector3 MyRigidBody::GetMinGlobal(void) { return m_v3MinG; }
 vector3 MyRigidBody::GetMaxGlobal(void) { return m_v3MaxG; }
 vector3 MyRigidBody::GetHalfWidth(void) { return m_v3HalfWidth; }
 matrix4 MyRigidBody::GetModelMatrix(void) { return m_m4ToWorld; }
-void MyRigidBody::SetModelMatrix(matrix4 a_m4ModelMatrix) { m_m4ToWorld = a_m4ModelMatrix; }
+void MyRigidBody::SetModelMatrix(matrix4 a_m4ModelMatrix)
+{
+	m_m4ToWorld = a_m4ModelMatrix;
+
+	m_v3CenterG = static_cast<vector3>( m_m4ToWorld * vector4(m_v3Center, 1.0f));
+}
 //Allocation
 void MyRigidBody::Init(void)
 {
@@ -63,14 +68,48 @@ void MyRigidBody::Release(void)
 MyRigidBody::MyRigidBody(std::vector<vector3> a_pointList)
 {
 	Init();
+	uint uPointCount = a_pointList.size();
 
-	m_v3Center = vector3(0.0f);
-	m_v3MinL = m_v3MinL = vector3(5.0f);
-	m_v3MaxL = m_v3MinL = vector3(-5.0f);
+	if (uPointCount < 3)
+		return;
 
-	//m_fRadius = glm::distance; //Radius
+	m_v3MinL = m_v3MaxL = a_pointList[0];
 
-	vector3 m_v3HalfWidth = vector3(0.0f); //half the size of all sides
+	for (uint i = 1; i < uPointCount; ++i)
+	{
+		if (m_v3MinL.x > a_pointList[i].x)
+			m_v3MinL.x = a_pointList[i].x;
+
+		else if (m_v3MaxL.x < a_pointList[i].x)
+			m_v3MaxL.x = a_pointList[i].x;
+
+		if (m_v3MinL.y > a_pointList[i].y)
+			m_v3MinL.y = a_pointList[i].y;
+
+		else if (m_v3MaxL.y < a_pointList[i].y)
+			m_v3MaxL.y = a_pointList[i].y;
+
+		if (m_v3MinL.z > a_pointList[i].z)
+			m_v3MinL.z = a_pointList[i].z;
+
+		else if (m_v3MaxL.z < a_pointList[i].z)
+			m_v3MaxL.z = a_pointList[i].z;
+	}
+
+	m_v3MinG = m_v3MinL;
+	m_v3MaxG = m_v3MaxL;
+
+	m_v3Center = (m_v3MaxL + m_v3MinL) / 2.0f;
+	m_v3HalfWidth = (m_v3MaxL - m_v3MinL) / 2.0f;
+
+	for(uint i = 0; i < uPointCount; ++i)
+	{
+		float fDistance = glm::distance(m_v3Center, a_pointList[i]);
+		if (fDistance > m_fRadius)
+			m_fRadius = fDistance;
+	}
+
+	
 }
 MyRigidBody::MyRigidBody(MyRigidBody const& other)
 {
@@ -108,12 +147,23 @@ MyRigidBody::~MyRigidBody(){Release();};
 //--- Non Standard Singleton Methods
 void MyRigidBody::AddToRenderList(void)
 {
-	m_pMeshMngr->AddWireSphereToRenderList(glm::scale(vector3(3.0f)), C_RED, RENDER_WIRE);
-
 	if (!m_bVisible)
 		return;
+
+	m_pMeshMngr->AddWireSphereToRenderList(glm::translate(m_m4ToWorld, m_v3Center) * glm::scale(vector3(m_fRadius)), m_v3Color, RENDER_WIRE);
+	m_pMeshMngr->AddWireCubeToRenderList(glm::translate(m_m4ToWorld, m_v3Center) * glm::scale(m_v3HalfWidth * 2.0f), C_BLUE, RENDER_WIRE);
 }
 bool MyRigidBody::IsColliding(MyRigidBody* const other)
 {
+	//
+	//if (glm::distance(m_v3CenterG,other->m_v3CenterG) < m_fRadius + other->m_fRadius) {
+	if(m_v3MaxG.x < other->m_v3MaxG.x){
+		return false;
+	}
+	if (m_v3MinG.x < other->m_v3MinG.x) {
+		return false;
+	}
+
+
 	return false;
 }

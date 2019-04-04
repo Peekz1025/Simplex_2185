@@ -286,6 +286,116 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	Simplex that might help you [eSATResults] feel free to use it.
 	(eSATResults::SAT_NONE has a value of 0)
 	*/
+	
+	// axis floats for checking collision
+	float axis1 = 0;
+	float axis2 = 0;
+
+	// ration matrix for the ____
+	matrix3 r;
+	matrix3 absr;
+
+	// arrays to hold planes
+	vector3 axes[3];
+	vector3 pOtherAxes[3];
+
+	// fill plane arrays with vector4s
+	// makes coding later waaaay easier
+	axes[0] = m_m4ToWorld * vector4(AXIS_X, 0.0f);
+	axes[1] = m_m4ToWorld * vector4(AXIS_Y, 0.0f);
+	axes[2] = m_m4ToWorld * vector4(AXIS_Z, 0.0f);
+
+	pOtherAxes[0] = a_pOther->m_m4ToWorld * vector4(AXIS_X, 0.0f);
+	pOtherAxes[1] = a_pOther->m_m4ToWorld * vector4(AXIS_Y, 0.0f);
+	pOtherAxes[2] = a_pOther->m_m4ToWorld * vector4(AXIS_Z, 0.0f);
+
+	// compute rotation matrix putting b in a's frame
+	for (size_t i = 0; i < 3; i++)
+		for (size_t j = 0; j < 3; j++)
+			r[i][j] = glm::dot(axes[i], pOtherAxes[j]);
+
+	// distance between objects' centers
+	vector3 translation = (a_pOther->GetCenterGlobal()) - GetCenterGlobal();
+	translation = vector3(glm::dot(translation, axes[0]), glm::dot(translation, axes[1]), glm::dot(translation, axes[2]));
+
+	// compute common subexpressions
+	for (size_t i = 0; i < 3; i++)
+		for (size_t j = 0; j < 3; j++)
+			absr[i][j] = glm::abs(r[i][j]) + FLT_EPSILON;
+
+	// Test axes L = A0, L = A1, L = A2
+	for (size_t i = 0; i < 3; i++)
+	{
+		axis1 = m_v3HalfWidth[i];
+		axis2 = a_pOther->m_v3HalfWidth[0] * absr[i][0] + a_pOther->m_v3HalfWidth[1] * absr[i][1] + a_pOther->m_v3HalfWidth[2] * absr[i][2];
+		if (glm::abs(translation[i]) > (axis1 + axis2))
+			return 1;
+	}
+
+	// Test axes L = B0, L = B1, L = B2
+	for (int i = 0; i < 3; i++) {
+		axis1 = m_v3HalfWidth[0] * absr[0][i] + m_v3HalfWidth[1] * absr[1][i] + m_v3HalfWidth[2] * absr[2][i];
+		axis2 = a_pOther->m_v3HalfWidth[i];
+		if (glm::abs(translation[0] * r[0][i] + translation[1] * r[1][i] + translation[2] * r[2][i]) > (axis1 + axis2))
+			return 1;
+	}
+
+	// Test axis L = A0 x B0
+	axis1 = m_v3HalfWidth[1] * absr[2][0] + m_v3HalfWidth[2] * absr[1][0];
+	axis2 = a_pOther->m_v3HalfWidth[1] * absr[0][2] + a_pOther->m_v3HalfWidth[2] * absr[0][1];
+	if (glm::abs(translation[2] * r[1][0] - translation[1] * r[2][0]) > (axis1 + axis2))
+	{
+		m_pMeshMngr->GeneratePlane(5, C_WHITE);
+		return SAT_AXxBX;
+	}
+
+	// Test axis L = A0 x B1
+	axis1 = m_v3HalfWidth[1] * absr[2][1] + m_v3HalfWidth[2] * absr[1][1];
+	axis2 = a_pOther->m_v3HalfWidth[0] * absr[0][2] + a_pOther->m_v3HalfWidth[2] * absr[0][0];
+	if (glm::abs(translation[2] * r[1][1] - translation[1] * r[2][1]) > (axis1 + axis2))
+		return SAT_AXxBY;
+
+	// Test axis L = A0 x B2
+	axis1 = m_v3HalfWidth[1] * absr[2][2] + m_v3HalfWidth[2] * absr[1][2];
+	axis2 = a_pOther->m_v3HalfWidth[0] * absr[0][1] + a_pOther->m_v3HalfWidth[1] * absr[0][0];
+	if (glm::abs(translation[2] * r[1][2] - translation[1] * r[2][2]) > (axis1 + axis2))
+		return SAT_AXxBZ;
+
+	// Test axis L = A1 x B0
+	axis1 = m_v3HalfWidth[0] * absr[2][0] + m_v3HalfWidth[2] * absr[0][0];
+	axis2 = a_pOther->m_v3HalfWidth[1] * absr[1][2] + a_pOther->m_v3HalfWidth[2] * absr[1][1];
+	if (glm::abs(translation[0] * r[2][0] - translation[2] * r[0][0]) > (axis1 + axis2))
+		return SAT_AYxBX;
+
+	// Test axis L = A1 x B1
+	axis1 = m_v3HalfWidth[0] * absr[2][1] + m_v3HalfWidth[2] * absr[0][1];
+	axis2 = a_pOther->m_v3HalfWidth[0] * absr[1][2] + a_pOther->m_v3HalfWidth[2] * absr[1][0];
+	if (glm::abs(translation[0] * r[2][1] - translation[2] * r[0][1]) > (axis1 + axis2))
+		return SAT_AYxBY;
+
+	// Test axis L = A1 x B2
+	axis1 = m_v3HalfWidth[0] * absr[2][2] + m_v3HalfWidth[2] * absr[0][2];
+	axis2 = a_pOther->m_v3HalfWidth[0] * absr[1][1] + a_pOther->m_v3HalfWidth[1] * absr[1][0];
+	if (glm::abs(translation[0] * r[2][2] - translation[2] * r[0][2]) > (axis1 + axis2))
+		return SAT_AYxBZ;
+
+	// Test axis L = A2 x B0
+	axis1 = m_v3HalfWidth[0] * absr[1][0] + m_v3HalfWidth[1] * absr[0][0];
+	axis2 = a_pOther->m_v3HalfWidth[1] * absr[2][2] + a_pOther->m_v3HalfWidth[2] * absr[2][1];
+	if (glm::abs(translation[1] * r[0][0] - translation[0] * r[1][0]) > (axis1 + axis2))
+		return SAT_AZxBX;
+
+	// Test axis L = A2 x B1
+	axis1 = m_v3HalfWidth[0] * absr[1][1] + m_v3HalfWidth[1] * absr[0][1];
+	axis2 = a_pOther->m_v3HalfWidth[0] * absr[2][2] + a_pOther->m_v3HalfWidth[2] * absr[2][0];
+	if (glm::abs(translation[1] * r[0][1] - translation[0] * r[1][1]) > (axis1 + axis2))
+		return SAT_AZxBY;
+
+	// Test axis L = A2 x B2
+	axis1 = m_v3HalfWidth[0] * absr[1][2] + m_v3HalfWidth[1] * absr[0][2];
+	axis2 = a_pOther->m_v3HalfWidth[0] * absr[2][1] + a_pOther->m_v3HalfWidth[1] * absr[2][0];
+	if (glm::abs(translation[1] * r[0][2] - translation[0] * r[1][2]) > (axis1 + axis2))
+		return SAT_AZxBZ;
 
 	//there is no axis test that separates this two objects
 	return eSATResults::SAT_NONE;

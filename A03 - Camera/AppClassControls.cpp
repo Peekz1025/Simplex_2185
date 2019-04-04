@@ -333,7 +333,7 @@ void Application::CameraRotation(float a_fSpeed)
 	UINT	MouseX, MouseY;		// Coordinates for the mouse
 	UINT	CenterX, CenterY;	// Coordinates for the center of the screen.
 
-								//Initialize the position of the pointer to the middle of the screen
+	//Initialize the position of the pointer to the middle of the screen
 	CenterX = m_pSystem->GetWindowX() + m_pSystem->GetWindowWidth() / 2;
 	CenterY = m_pSystem->GetWindowY() + m_pSystem->GetWindowHeight() / 2;
 
@@ -369,6 +369,9 @@ void Application::CameraRotation(float a_fSpeed)
 		fAngleX += fDeltaMouse * a_fSpeed;
 	}
 	//Change the Yaw and the Pitch of the camera
+	m_pCamera->MovePitch(fAngleX);
+	m_pCamera->MoveYaw(fAngleY);
+
 	SetCursorPos(CenterX, CenterY);//Position the mouse in the center
 }
 //Keyboard
@@ -386,10 +389,19 @@ void Application::ProcessKeyboard(void)
 	if (fMultiplier)
 		fSpeed *= 5.0f;
 
+	//camera controlls. i added A,D,
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 		m_pCamera->MoveForward(fSpeed);
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
 		m_pCamera->MoveForward(-fSpeed);
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+		m_pCamera->MoveSideways(fSpeed);
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+		m_pCamera->MoveSideways(-fSpeed);
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt) || sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
+		m_pCamera->MoveVertical(fSpeed);
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+		m_pCamera->MoveVertical(-fSpeed);
 #pragma endregion
 }
 //Joystick
